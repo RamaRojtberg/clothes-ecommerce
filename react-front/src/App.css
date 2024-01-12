@@ -1,0 +1,81 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+.product:hover {
+  transform: scale(1.05);
+  transition: 0.1s ease-in-out;
+  box-shadow: 5px 6px 5px 0px rgba(0,0,0,0.75);
+}
+.product img:hover{
+  cursor: pointer;
+}
+.toProduct {
+  text-decoration: none;
+  color: #ffffff;
+}
+.imgProd, .swiper{
+  max-height: 300px;
+}
+.firstBox {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0;
+}
+.secondBox {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.swiper {
+  margin-right: 0px !important;
+}
+@media(min-width:992px){
+  .imgProd, .swiper{
+    max-height: 400px;
+  }
+  
+}
+.swiper-slide img:hover{
+  cursor: pointer;
+}
+/*.titleProductCart1, .unitPriceCart1 {
+  display: none;
+}
+@media(max-width:480px){
+  .titleProductCart1 {
+    display: block;
+    padding: 15px 0 0 0;
+  }
+  .titleProductCart2 {
+    display: none;
+  }
+}
+*/
