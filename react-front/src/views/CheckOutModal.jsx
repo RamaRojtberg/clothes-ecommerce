@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react'
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -9,7 +9,12 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import CheckOutProduct from '../components/CheckOutProduct';
 import { Divider, Grid } from '@mui/material';
 import CheckOutAmounts from '../components/CheckOutAmounts';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+import { addFees } from '../store/slice'
+
 
 function Query600() {
     const matches = useMediaQuery('(max-width:600px)');
@@ -29,33 +34,189 @@ const style = {
 
 const CheckOutModal = () => {
   
+  const fees = useSelector(state => state.fees.fees)
+
+  const dispatch = useDispatch()
+
+  const navigate = useNavigate()
+
+  const getFees = async () => {
+    await axios.get('http://localhost:3001/commerce')
+      .then((res) => {
+        console.log(res.data)
+        if(res.data[0] === "ok"){
+          const aggFees = {
+            shipping: res.data[1].shipping,
+            tax: res.data[1].tax
+          }
+          dispatch(addFees(aggFees))
+        } else {
+            Swal.fire({
+              title: "Something went wrong",
+              confirmButtonText: "Got it",
+              confirmButtonColor:"#90caf9",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                handleClose()
+                window.location.reload()
+              }
+            })
+        }
+      })
+  }
+  
   const products = useSelector(state => state.cart.products)
 
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(false)
 
-  
+  const totalProdAmount = () => {
+      let totalAmount = 0
+
+      products.map((value) =>
+      totalAmount += (value.quantity * value.price))
+
+      totalAmount = totalAmount.toFixed(2)
+      //console.log(totalAmount);
+      return totalAmount
+  }
+
+  const shippingAmount = () => {
+
+    console.log("shippingFee", fees[0].shipping)
+    let totalShipping = 0
+
+    products.map((value) =>
+    totalShipping += (value.quantity * value.weight * fees[0].shipping))
+
+    totalShipping = totalShipping.toFixed(2)
+    return totalShipping
+
+  }
+
+  const taxesAmount = () => {
+
+    console.log("taxFee", fees[0].tax)
+    let totalTaxes = 0
+
+    products.map((value) =>
+    totalTaxes += (value.quantity * value.price * (fees[0].tax/100)))
+
+    totalTaxes = totalTaxes.toFixed(2)
+    return totalTaxes
+
+  }
+
+  const finalTotal = () => {
+    let total = Number(totalProdAmount()) + Number(shippingAmount()) + Number(taxesAmount())
+    total = total.toFixed(2)
+    return total
+  }
+
+  const auth = async () => {
+
+    axios.get('http://localhost:3001/header', { withCredentials: true })
+
+      .then((res) => {
+        //console.log(res.data)
+        if(res.data[0] === "no-session"){
+          Swal.fire({
+            title: "Log In to buy a product",
+            confirmButtonText: "Got it",
+            confirmButtonColor:"#90caf9",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              handleClose()
+            }
+          })
+        } else if (res.data[0] === "session"){
+          axios.post("http://localhost:3001/purchaseValid", {
+          body:{
+            products,
+            totalProdAmount: totalProdAmount(),
+            shippingAmount: shippingAmount(),
+            taxesAmount: taxesAmount(),
+            finalTotal: finalTotal()
+          }
+          })
+          .then((res)=>{
+            //console.log(res.data)
+            if(res.data === "valid"){
+              //console.log('Compra válida')
+              let timerInterval
+              Swal.fire({
+                title: "Processing",
+                timer: 1000,
+                timerProgressBar: true,
+                didOpen: () => {
+                  Swal.showLoading()
+                },
+                willClose: () => {
+                  clearInterval(timerInterval)
+                }
+              }).then((result) => {
+                handleClose()
+                navigate('/purchase')
+              })
+            } else {
+              navigate('/')
+            }
+          })
+          .catch((err)=>{
+            Swal.fire({
+              title: "Something went wrong",
+              confirmButtonText: "Got it",
+              confirmButtonColor:"#90caf9",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                handleClose()
+                window.location.reload()
+              }
+            })
+          })
+        }
+      })
+      .catch((err) => {
+        Swal.fire({
+          title: "Something went wrong",
+          confirmButtonText: "Got it",
+          confirmButtonColor:"#90caf9",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            handleClose()
+            window.location.reload()
+          }
+        })
+      })
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const handleOpen = () => {
     setOpen(true)
-    console.log(products)
+    getFees()
+    //console.log(products)
   }
 
-  const totalProdAmount = () => {
-    let totalAmount = 0
-
-    products.map((value) =>
-    totalAmount += (value.quantity * value.price))
-
-    totalAmount = totalAmount.toFixed(2)
-    //console.log(totalAmount);
-    return totalAmount
+  const openExecution = () => {
+    handleOpen()
   }
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => setOpen(false)
 
   return (
     <div>
-      <Button onClick={handleOpen} variant='outlined' sx={{m:"5px 0 15px 0", width:"40%"}}>Pay</Button>
+      <Button onClick={openExecution} variant='outlined' sx={{m:"5px 0 15px 0", width:"40%"}}>Pay</Button>
 
       <Modal
         aria-labelledby="transition-modal-title"
@@ -103,14 +264,14 @@ const CheckOutModal = () => {
             </Grid>
 
             <Grid container>
-              <CheckOutAmounts/>
+              <CheckOutAmounts onAmount={totalProdAmount} onShipping={shippingAmount} onTaxes={taxesAmount}/>
             </Grid>
 
             <Divider/>
 
-            <Typography variant='h5' sx={{textAlign:'right', m:"5px auto"}}>Total</Typography>
+            <Typography variant='h5' sx={{textAlign:'right', m:"5px auto"}}>{finalTotal()}</Typography>
 
-            <Button variant='outlined' sx={{float:"right", mt:"15px"}}>Pay</Button>
+            <Button variant='outlined' sx={{float:"right", mt:"15px"}} onClick={() => auth()}>Pay</Button>
 
           </Box>
         </Fade>

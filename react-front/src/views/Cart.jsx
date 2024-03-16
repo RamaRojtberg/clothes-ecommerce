@@ -1,8 +1,7 @@
-import { Box, Container, Grid, Typography } from '@mui/material'
 import React from 'react'
+import { Box, Container, Grid, Typography } from '@mui/material'
 import ProductHorizontal from '../components/ProductHorizontal'
 
-import product1 from "../assets/products/product1.jpeg"
 import CheckOutModal from './CheckOutModal'
 import { useDispatch, useSelector } from 'react-redux'
 import { removeProduct, updateQuantity } from '../store/slice'
@@ -26,19 +25,26 @@ const Cart = () => {
     }))
   }
 
-  const removeFromCart = (id) => {
-    dispatch(removeProduct(id))
+  const removeFromCart = (id, size, color) => {
+    dispatch(removeProduct({id, size, color}))
   }
+
+  const productImages = require.context('../assets/products', true)
 
   return (
     <Container>
         <Box sx={{borderRadius:"5px", margin:"20px auto"}}>
             <Typography variant='h3' p={2} sx={{backgroundColor:"#202020", borderTopLeftRadius:"5px", borderTopRightRadius:"5px"}}>Cart</Typography>
             <Grid item xs={12} sx={{backgroundColor:"#252525", borderBottomRightRadius:"5px", borderBottomLeftRadius:"5px"}}>
-              <ProductHorizontal img={product1}/>
-              {products.map((value, index) =>
-                <ProductHorizontal key={index} id={value.id} img={value.img} name={value.name} quantity={value.quantity} price={value.price} index={index} onModifyQuantity={modifyQuantity} onRemoveFromCart={removeFromCart} />)}
-              <CheckOutModal/>
+              
+              {products.length === 0
+              ? <Typography variant='h3' sx={{p:"20px"}}>There's no products in cart</Typography>
+              : products.map((value, index) =>
+              <ProductHorizontal key={index} id={value.id} img={productImages(`./${value.img}`)} name={value.name} quantity={value.quantity} price={value.price} size={value.size} color={value.color} index={index} onModifyQuantity={modifyQuantity} onRemoveFromCart={removeFromCart} />)
+              }
+
+              {products.length !== 0 && <CheckOutModal/>}
+              
             </Grid>
         </Box>
     </Container>
